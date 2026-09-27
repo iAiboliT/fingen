@@ -12,3 +12,6 @@
 - Dark/light dynamic theme.
 - GitHub Actions Android CI.
 - Financial unit tests.
+
+
+> Development branch: `fingen-next`.
