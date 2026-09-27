@@ -2,9 +2,14 @@ name: Android CI
 
 on:
   push:
-    branches: [ main, develop, fingen-next ]
+    branches:
+      - main
+      - develop
+      - fingen-next
   pull_request:
-    branches: [ main ]
+    branches:
+      - main
+      - fingen-next
   workflow_dispatch:
 
 permissions:
@@ -16,8 +21,9 @@ concurrency:
 
 jobs:
   build:
+    name: Verify and assemble debug APK
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -27,12 +33,9 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-          cache: gradle
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v4.0.4
-        with:
-          packages: 'platform-tools'
 
       - name: Install Android SDK packages
         run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
@@ -42,21 +45,35 @@ jobs:
         with:
           gradle-version: '9.6.1'
 
-      - name: Build and test
-        run: gradle --no-daemon test lint assembleDebug
+      - name: Diagnose toolchain
+        run: |
+          java -version
+          gradle --version
+          sdkmanager --list_installed
+
+      - name: Verify Gradle project
+        run: gradle --no-daemon --stacktrace projects
+
+      - name: Run unit tests, lint, and assemble APK
+        run: gradle --no-daemon --stacktrace test lint assembleDebug
 
       - name: Upload debug APK
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: fingennext-debug-apk
           path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
+          retention-days: 14
 
-      - name: Upload quality reports
+      - name: Upload quality and test reports
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: fingennext-quality-reports
           path: |
             app/build/reports/**
             app/build/test-results/**
+            app/build/outputs/logs/**
           if-no-files-found: warn
+          retention-days: 14

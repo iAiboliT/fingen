@@ -17,16 +17,35 @@ class ReceiptRepository @Inject constructor(private val dao: ReceiptDao) {
     suspend fun saveDistributed(receipt: Receipt, accountId: Long, categoryIds: Map<ReceiptCategory, Long?>): Long {
         val fiscalKey = fiscalKey(receipt.qr)
         require(dao.findReceipt(fiscalKey) == null) { "Этот чек уже сохранён в FingenNext" }
-        val receiptEntity = ReceiptEntity(fiscalKey, receipt.qr.raw, receipt.merchantName, receipt.merchantInn, receipt.dateTime?.toString(), receipt.total.minor, receipt.total.currency)
+        val receiptEntity = ReceiptEntity(fiscalKey = fiscalKey, rawQr = receipt.qr.raw, merchantName = receipt.merchantName, merchantInn = receipt.merchantInn, occurredAt = receipt.dateTime?.toString(), totalMinor = receipt.total.minor, currency = receipt.total.currency)
         val itemEntities = receipt.items.mapIndexed { index, item ->
-            ReceiptItemEntity(0L, 0L, index, item.name, item.quantity.stripTrailingZeros().toPlainString(), item.unitPrice.minor, item.total.minor, item.total.currency, item.suggestedCategory.name)
+            ReceiptItemEntity(
+                receiptId = 0L,
+                position = index,
+                name = item.name,
+                quantity = item.quantity.stripTrailingZeros().toPlainString(),
+                unitPriceMinor = item.unitPrice.minor,
+                totalMinor = item.total.minor,
+                currency = item.total.currency,
+                suggestedCategory = item.suggestedCategory.name
+            )
         }
         val date = (receipt.dateTime?.toLocalDate() ?: LocalDate.now()).toString()
         val operations = receipt.items.filter { it.total.minor != 0L }.groupBy { it.suggestedCategory }.map { (category, items) ->
             val total = items.fold(0L) { acc, item -> Math.addExact(acc, item.total.minor) }
             ReceiptOperationWrite(
-                TransactionEntity(0L, TransactionType.Expense.name, total, receipt.total.currency, date, accountId, null, categoryIds[category], "Чек" + (receipt.merchantName?.let { " — " + it } ?: "") + ": " + category.title),
-                accountId, -total
+                TransactionEntity(
+                    type = TransactionType.Expense.name,
+                    amountMinor = total,
+                    currency = receipt.total.currency,
+                    date = date,
+                    fromAccountId = accountId,
+                    toAccountId = null,
+                    categoryId = categoryIds[category],
+                    note = "Чек" + (receipt.merchantName?.let { " — " + it } ?: "") + ": " + category.title
+                ),
+                accountId,
+                -total
             )
         }
         require(operations.sumOf { it.transaction.amountMinor } == receipt.total.minor) { "Сумма позиций чека не совпадает с итогом" }
@@ -36,25 +55,24 @@ class ReceiptRepository @Inject constructor(private val dao: ReceiptDao) {
     suspend fun linkExistingTransaction(receipt: Receipt, transactionId: Long): Long {
         val fiscalKey = fiscalKey(receipt.qr)
         val receiptEntity = ReceiptEntity(
-            fiscalKey,
-            receipt.qr.raw,
-            receipt.merchantName,
-            receipt.merchantInn,
-            receipt.dateTime?.toString(),
-            receipt.total.minor,
-            receipt.total.currency
+            fiscalKey = fiscalKey,
+            rawQr = receipt.qr.raw,
+            merchantName = receipt.merchantName,
+            merchantInn = receipt.merchantInn,
+            occurredAt = receipt.dateTime?.toString(),
+            totalMinor = receipt.total.minor,
+            currency = receipt.total.currency
         )
         val itemEntities = receipt.items.mapIndexed { index, item ->
             ReceiptItemEntity(
-                0L,
-                0L,
-                index,
-                item.name,
-                item.quantity.stripTrailingZeros().toPlainString(),
-                item.unitPrice.minor,
-                item.total.minor,
-                item.total.currency,
-                item.suggestedCategory.name
+                receiptId = 0L,
+                position = index,
+                name = item.name,
+                quantity = item.quantity.stripTrailingZeros().toPlainString(),
+                unitPriceMinor = item.unitPrice.minor,
+                totalMinor = item.total.minor,
+                currency = item.total.currency,
+                suggestedCategory = item.suggestedCategory.name
             )
         }
         return dao.saveReceiptAndLink(receiptEntity, itemEntities, transactionId)
@@ -66,5 +84,14 @@ class ReceiptRepository @Inject constructor(private val dao: ReceiptDao) {
     private fun sha256(value: String): String =
         MessageDigest.getInstance("SHA-256").digest(value.toByteArray()).joinToString("") { "%02x".format(it) }
 
-    private fun TransactionEntity.toDomain() = Transaction(id, TransactionType.valueOf(type), Money(amountMinor, currency), LocalDate.parse(date), fromAccountId, toAccountId, categoryId, note)
+    private fun TransactionEntity.toDomain() = Transaction(
+        id = id,
+        type = TransactionType.valueOf(type),
+        amount = Money(amountMinor, currency),
+        date = LocalDate.parse(date),
+        fromAccountId = fromAccountId,
+        toAccountId = toAccountId,
+        categoryId = categoryId,
+        note = note
+    )
 }
