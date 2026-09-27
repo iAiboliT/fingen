@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.2 — 2026-09-28
+- Production hardening of receipt persistence.
+- Linking a scanned receipt to an existing transaction is now atomic, including concurrent duplicate-scan handling.
+- Removed the remaining Double-based fallback from receipt unit-price calculation; monetary arithmetic uses exact BigDecimal/Long minor-unit conversion with explicit rounding.
+- Synchronized Android versionCode/versionName with the release notes.
+- Gmail OAuth remains available in normal Settings for users who want automatic electronic-receipt import.
+
 ## 0.3.1 — 2026-09-27
 - Чеки сохраняются как отдельные сущности с фискальным идентификатором и позициями.
 - Повторное сканирование одного фискального чека блокируется.
