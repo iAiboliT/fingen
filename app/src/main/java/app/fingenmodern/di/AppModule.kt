@@ -26,20 +26,19 @@ object AppModule {
                 DatabaseMigrations.MIGRATION_1_2,
                 DatabaseMigrations.MIGRATION_2_3,
                 DatabaseMigrations.MIGRATION_3_4,
-                DatabaseMigrations.MIGRATION_4_5
+                DatabaseMigrations.MIGRATION_4_5,
+                DatabaseMigrations.MIGRATION_5_6
             )
             .fallbackToDestructiveMigrationOnDowngrade()
             .build()
 
     @Provides fun provideDao(db: AppDatabase) = db.financeDao()
-
+    @Provides fun provideReceiptDao(db: AppDatabase) = db.receiptDao()
     @Provides fun provideRepository(repo: RoomFinanceRepository): FinanceRepository = repo
 
     @Provides @Singleton
     fun provideSettingsDataStore(@ApplicationContext context: Context): DataStore<Preferences> =
-        PreferenceDataStoreFactory.create {
-            context.preferencesDataStoreFile("fingen_settings.preferences_pb")
-        }
+        PreferenceDataStoreFactory.create { context.preferencesDataStoreFile("fingen_settings.preferences_pb") }
 
     @Provides @Singleton
     fun provideReceiptProvider(provider: ProverkaChekaReceiptProvider): ReceiptProvider = provider
