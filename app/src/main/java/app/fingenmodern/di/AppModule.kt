@@ -2,7 +2,7 @@ package app.fingenmodern.di
 
 import android.content.Context
 import androidx.datastore.core.DataStore
-import androidx.datastore.core.DataStoreFactory
+import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStoreFile
 import androidx.room3.Room
@@ -36,7 +36,7 @@ object AppModule {
 
     @Provides @Singleton
     fun provideSettingsDataStore(@ApplicationContext context: Context): DataStore<Preferences> =
-        DataStoreFactory.create {
+        PreferenceDataStoreFactory.create {
             context.preferencesDataStoreFile("fingen_settings.preferences_pb")
         }
 
