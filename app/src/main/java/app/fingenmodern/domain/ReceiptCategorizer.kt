@@ -10,7 +10,7 @@ object ReceiptCategorizer {
                 ReceiptCategory.Restaurants
             listOf("такси", "метро", "автобус", "билет", "жд ", "ржд", "заправ", "бензин", "топлив").any(value::contains) ->
                 ReceiptCategory.Transport
-            listOf("аптек", "лекар", "таблет", "витамин", "медицин", "стомат").any(value::contains) ->
+            listOf("аптек", "лекар", "таблет", "витамин", "медицин", "стомат", "парацетамол", "ибупрофен", "аспирин").any(value::contains) ->
                 ReceiptCategory.Health
             listOf("ламп", "мебел", "посуда", "моющ", "уборк", "хозтовар", "домаш").any(value::contains) ->
                 ReceiptCategory.Home
