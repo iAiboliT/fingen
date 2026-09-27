@@ -17,6 +17,7 @@ fun FingenModernAppRoot() {
             composable(AppDestination.More.route) { MoreScreen(nav) }
             composable(AppDestination.AddOperation.route) { AddOperationScreen(nav) }
             composable(AppDestination.ReceiptScan.route) { ReceiptScanScreen(nav) }
+            composable(AppDestination.ImportInbox.route) { ImportInboxScreen(nav) }
             composable(AppDestination.CreditCards.route) { CreditCardsScreen(nav) }
             composable(AppDestination.Reports.route) { ReportsScreen(nav) }
             composable(AppDestination.Settings.route) { SettingsScreen(nav) }

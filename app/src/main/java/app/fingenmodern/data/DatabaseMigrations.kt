@@ -53,4 +53,27 @@ object DatabaseMigrations {
             c.execSQL("CREATE INDEX IF NOT EXISTS index_categories_parentId ON categories(parentId)")
         }
     }
+
+    val MIGRATION_4_5 = object : Migration(4, 5) {
+        override suspend fun migrate(c: SQLiteConnection) {
+            c.execSQL("""CREATE TABLE IF NOT EXISTS import_candidates(
+                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                sourceKey TEXT NOT NULL,
+                source TEXT NOT NULL,
+                sourcePackage TEXT,
+                title TEXT,
+                text TEXT NOT NULL,
+                amountMinor INTEGER NOT NULL,
+                currency TEXT NOT NULL,
+                direction TEXT NOT NULL,
+                occurredAt TEXT NOT NULL,
+                suggestedReason TEXT,
+                suggestedDebtId INTEGER,
+                status TEXT NOT NULL DEFAULT 'Pending'
+            )""")
+            c.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_import_candidates_sourceKey ON import_candidates(sourceKey)")
+            c.execSQL("CREATE INDEX IF NOT EXISTS index_import_candidates_status ON import_candidates(status)")
+            c.execSQL("CREATE INDEX IF NOT EXISTS index_import_candidates_occurredAt ON import_candidates(occurredAt)")
+        }
+    }
 }

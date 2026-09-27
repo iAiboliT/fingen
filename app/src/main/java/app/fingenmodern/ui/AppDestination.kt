@@ -8,6 +8,7 @@ sealed class AppDestination(val route: String, val title: String) {
     data object More : AppDestination("more", "Еще")
     data object AddOperation : AppDestination("add_operation", "Новая операция")
     data object ReceiptScan : AppDestination("receipt_scan", "Сканировать чек")
+    data object ImportInbox : AppDestination("import_inbox", "На проверке")
     data object CreditCards : AppDestination("credit_cards", "Кредитки")
     data object Reports : AppDestination("reports", "Отчеты")
     data object Settings : AppDestination("settings", "Настройки")

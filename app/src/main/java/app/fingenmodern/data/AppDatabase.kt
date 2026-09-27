@@ -10,9 +10,10 @@ import androidx.room3.RoomDatabase
         LedgerEntryEntity::class,
         DebtEntity::class,
         CreditCardTemplateEntity::class,
-        CategoryEntity::class
+        CategoryEntity::class,
+        ImportCandidateEntity::class
     ],
-    version = 4,
+    version = 5,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

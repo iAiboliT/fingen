@@ -2,6 +2,7 @@ package app.fingenmodern.data
 
 import androidx.room3.Dao
 import androidx.room3.Insert
+import androidx.room3.OnConflictStrategy
 import androidx.room3.Query
 import androidx.room3.Transaction
 import androidx.room3.Update
@@ -25,12 +26,18 @@ interface FinanceDao {
     @Query("SELECT COUNT(*) FROM accounts") suspend fun countAccounts(): Int
     @Query("SELECT COUNT(*) FROM credit_card_templates") suspend fun countCreditCardTemplates(): Int
     @Query("SELECT COUNT(*) FROM categories") suspend fun countCategories(): Int
+    @Query("SELECT COUNT(*) FROM import_candidates WHERE status='Pending'") fun observePendingImportCount(): Flow<Int>
 
     @Query("SELECT * FROM debts WHERE status!='Closed' ORDER BY dueDate IS NULL,dueDate")
     fun observeOpenDebts(): Flow<List<DebtEntity>>
 
     @Query("SELECT * FROM debts WHERE id=:debtId LIMIT 1")
     suspend fun getDebt(debtId: Long): DebtEntity?
+
+    @Query("""SELECT * FROM debts
+        WHERE status!='Closed' AND remainingMinor=:amountMinor AND currency=:currency
+        ORDER BY id LIMIT 2""")
+    suspend fun findExactOpenDebts(amountMinor: Long, currency: String): List<DebtEntity>
 
     @Query("SELECT * FROM credit_card_templates ORDER BY bankName,productName")
     fun observeCreditCardTemplates(): Flow<List<CreditCardTemplateEntity>>
@@ -41,6 +48,12 @@ interface FinanceDao {
     @Query("SELECT id FROM categories WHERE key=:key AND archived=0 LIMIT 1")
     suspend fun getCategoryId(key: String): Long?
 
+    @Query("SELECT * FROM import_candidates WHERE status='Pending' ORDER BY occurredAt DESC,id DESC")
+    fun observePendingImportCandidates(): Flow<List<ImportCandidateEntity>>
+
+    @Query("SELECT * FROM import_candidates WHERE id=:candidateId LIMIT 1")
+    suspend fun getImportCandidate(candidateId: Long): ImportCandidateEntity?
+
     @Insert suspend fun insertAccount(account: AccountEntity): Long
     @Insert suspend fun insertDebt(debt: DebtEntity): Long
     @Update suspend fun updateDebt(debt: DebtEntity)
@@ -48,11 +61,18 @@ interface FinanceDao {
     @Insert suspend fun insertCategory(category: CategoryEntity): Long
     @Insert suspend fun insertTransaction(transaction: TransactionEntity): Long
     @Insert suspend fun insertLedgerEntries(entries: List<LedgerEntryEntity>)
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertImportCandidate(candidate: ImportCandidateEntity): Long
+    @Update suspend fun updateImportCandidate(candidate: ImportCandidateEntity)
 
     @Transaction
     suspend fun recordOperation(
-        transaction: TransactionEntity, entries: List<LedgerEntryEntity>, newDebt: DebtEntity? = null,
-        debtToReduceId: Long? = null, debtReductionMinor: Long = 0
+        transaction: TransactionEntity,
+        entries: List<LedgerEntryEntity>,
+        newDebt: DebtEntity? = null,
+        debtToReduceId: Long? = null,
+        debtReductionMinor: Long = 0,
+        acceptedImportCandidateId: Long? = null
     ): Long {
         val id = insertTransaction(transaction)
         insertLedgerEntries(entries.map { it.copy(transactionId = id) })
@@ -62,6 +82,11 @@ interface FinanceDao {
             val remaining = debt.remainingMinor - debtReductionMinor
             require(remaining >= 0) { "Debt repayment exceeds remaining amount" }
             updateDebt(debt.copy(remainingMinor = remaining, status = if (remaining == 0L) "Closed" else debt.status))
+        }
+        acceptedImportCandidateId?.let { candidateId ->
+            getImportCandidate(candidateId)?.let {
+                updateImportCandidate(it.copy(status = "Accepted"))
+            }
         }
         return id
     }
