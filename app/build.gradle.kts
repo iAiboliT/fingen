@@ -11,8 +11,8 @@ android {
         applicationId = "app.fingenmodern"
         minSdk = 26
         targetSdk = 36
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = 2
+        versionName = "0.2.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     buildFeatures { compose = true }
@@ -24,7 +24,7 @@ android {
     testOptions { unitTests.isReturnDefaultValues = true }
 }
 kotlin { jvmToolchain(17) }
-ksp { arg("room.schemaLocation", "$projectDir/schemas") }
+ksp { arg("room.schemaLocation", "\$projectDir/schemas") }
 dependencies {
     val composeBom = platform("androidx.compose:compose-bom:2026.06.01")
     implementation(composeBom)
@@ -44,6 +44,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
     implementation("com.google.dagger:hilt-android:2.60.1")
     ksp("com.google.dagger:hilt-compiler:2.60.1")
+    implementation("com.google.android.gms:play-services-code-scanner:16.1.0")
     testImplementation("org.jetbrains.kotlin:kotlin-test")
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
