@@ -1,7 +1,7 @@
 package app.fingenmodern.domain
 import java.math.BigDecimal
 import java.time.LocalDate
-import kotlin.test.Test
+import org.junit.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
