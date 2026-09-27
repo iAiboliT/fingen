@@ -28,3 +28,6 @@
 - CSV/JSON экспорт.
 - Локальные encrypted backups.
 - Миграция из старого Fingen после анализа формата базы/экспорта.
+
+
+> Development branch: `fingen-next`.
