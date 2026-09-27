@@ -24,7 +24,6 @@ android {
     testOptions { unitTests.isReturnDefaultValues = true }
 }
 kotlin { jvmToolchain(17) }
-ksp { arg("room.schemaLocation", "\$projectDir/schemas") }
 dependencies {
     val composeBom = platform("androidx.compose:compose-bom:2026.06.01")
     implementation(composeBom)
