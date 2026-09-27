@@ -1,0 +1,78 @@
+name: Android CI
+
+on:
+  push:
+    branches: [ "main", "develop" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build, test and lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Validate Gradle wrapper
+        shell: bash
+        run: |
+          test -f ./gradlew || {
+            echo "::error::Gradle wrapper ./gradlew is missing."
+            echo "FingenNext must commit the Gradle wrapper before Android CI can build the project."
+            exit 1
+          }
+          test -f ./gradle/wrapper/gradle-wrapper.properties || {
+            echo "::error::gradle-wrapper.properties is missing."
+            exit 1
+          }
+          chmod +x ./gradlew
+
+      - name: Set up JDK
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Accept Android SDK licenses
+        shell: bash
+        run: yes | sdkmanager --licenses >/dev/null || true
+
+      - name: Build, unit test and lint
+        shell: bash
+        run: |
+          ./gradlew --no-daemon test lint assembleDebug
+
+      - name: Upload debug APK
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fingennext-debug-apk
+          path: '**/build/outputs/apk/debug/*.apk'
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload test and lint reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fingennext-quality-reports
+          path: |
+            **/build/reports/**
+            **/build/test-results/**
+          if-no-files-found: ignore
+          retention-days: 14
