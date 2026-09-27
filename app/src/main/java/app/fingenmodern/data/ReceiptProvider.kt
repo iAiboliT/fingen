@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import java.math.BigDecimal
+import java.math.RoundingMode
 import java.net.HttpURLConnection
 import java.net.URLEncoder
 import java.net.URL
@@ -75,7 +76,15 @@ class ProverkaChekaReceiptProvider @Inject constructor(
                         val name = item.optString("name").ifBlank { "Товар" }
                         val quantity = item.optString("quantity").toBigDecimalOrNull() ?: BigDecimal.ONE
                         val sum = item.optLong("sum")
-                        val price = item.optLong("price", if (quantity.signum() != 0) (sum / quantity.toDouble()).toLong() else sum)
+                        val price = if (item.has("price") && !item.isNull("price")) {
+                            item.optLong("price")
+                        } else if (quantity.signum() != 0) {
+                            BigDecimal.valueOf(sum)
+                                .divide(quantity, 0, RoundingMode.HALF_UP)
+                                .longValueExact()
+                        } else {
+                            sum
+                        }
                         add(
                             ReceiptItem(
                                 name = name,
