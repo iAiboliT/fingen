@@ -1,0 +1,36 @@
+[
+  {
+    "id": "sber-credit-sbercard-custom",
+    "bankName": "СберБанк",
+    "productName": "Кредитная СберКарта / пользовательский шаблон",
+    "gracePeriodModel": "CalendarMonthPlusPaymentWindow",
+    "graceLengthDays": 120,
+    "statementDayOfMonth": 1,
+    "paymentWindowDays": null,
+    "annualPurchaseRatePercent": 37.8,
+    "annualCashRatePercent": 37.8,
+    "minimumPaymentPercent": 10,
+    "minimumPaymentFloorRub": 150,
+    "interestStartRule": "FromGraceEndDate",
+    "cashOperationsBreakGrace": true,
+    "editable": true,
+    "disclaimer": "Демо-шаблон. Перед использованием пользователь сверяет с договором и приложением банка."
+  },
+  {
+    "id": "tbank-platinum-custom",
+    "bankName": "Т-Банк",
+    "productName": "Платинум / пользовательский шаблон",
+    "gracePeriodModel": "StatementBased",
+    "graceLengthDays": 55,
+    "statementDayOfMonth": null,
+    "paymentWindowDays": 25,
+    "annualPurchaseRatePercent": 59.9,
+    "annualCashRatePercent": 59.9,
+    "minimumPaymentPercent": 14,
+    "minimumPaymentFloorRub": 600,
+    "interestStartRule": "FromGraceEndDate",
+    "cashOperationsBreakGrace": true,
+    "editable": true,
+    "disclaimer": "Демо-шаблон. Условия могут быть индивидуальными."
+  }
+]
