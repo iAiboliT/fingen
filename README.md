@@ -44,3 +44,6 @@ gradle assembleDebug
 ```
 
 CI настроен в `.github/workflows/android.yml`.
+
+
+> Development branch: `fingen-next`.
