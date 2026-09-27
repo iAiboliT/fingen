@@ -17,7 +17,7 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import javax.inject.Inject
-private enum class Kind(val title:String){Expense("Расход"),Income("Доход")}
+enum class Kind(val title:String){Expense("Расход"),Income("Доход")}
 @HiltViewModel class AddOperationViewModel @Inject constructor(private val repo:FinanceRepository):ViewModel(){
     val accounts=repo.observeAccounts().stateIn(viewModelScope,SharingStarted.WhileSubscribed(5000),emptyList())
     fun save(kind:Kind,accountId:Long,minor:Long,note:String,onDone:()->Unit)=viewModelScope.launch{
