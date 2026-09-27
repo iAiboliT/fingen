@@ -15,7 +15,7 @@ import androidx.navigation.NavController
 import app.fingenmodern.data.FinanceRepository
 import app.fingenmodern.domain.*
 import app.fingenmodern.ui.AppDestination
-import app.fingenmodern.ui.components.FingenScaffold
+import app.fingenmodern.ui.components.*
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
