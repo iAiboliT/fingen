@@ -35,17 +35,29 @@ class ReceiptRepository @Inject constructor(private val dao: ReceiptDao) {
 
     suspend fun linkExistingTransaction(receipt: Receipt, transactionId: Long): Long {
         val fiscalKey = fiscalKey(receipt.qr)
-        val existing = dao.findReceipt(fiscalKey)
-        val receiptId = existing?.id ?: dao.insertReceipt(
-            ReceiptEntity(fiscalKey, receipt.qr.raw, receipt.merchantName, receipt.merchantInn, receipt.dateTime?.toString(), receipt.total.minor, receipt.total.currency)
-        ).also { id ->
-            require(id > 0L) { "Не удалось сохранить чек" }
-            dao.insertItems(receipt.items.mapIndexed { index, item ->
-                ReceiptItemEntity(id, id, index, item.name, item.quantity.stripTrailingZeros().toPlainString(), item.unitPrice.minor, item.total.minor, item.total.currency, item.suggestedCategory.name)
-            })
+        val receiptEntity = ReceiptEntity(
+            fiscalKey,
+            receipt.qr.raw,
+            receipt.merchantName,
+            receipt.merchantInn,
+            receipt.dateTime?.toString(),
+            receipt.total.minor,
+            receipt.total.currency
+        )
+        val itemEntities = receipt.items.mapIndexed { index, item ->
+            ReceiptItemEntity(
+                0L,
+                0L,
+                index,
+                item.name,
+                item.quantity.stripTrailingZeros().toPlainString(),
+                item.unitPrice.minor,
+                item.total.minor,
+                item.total.currency,
+                item.suggestedCategory.name
+            )
         }
-        dao.linkTransaction(ReceiptTransactionLinkEntity(receiptId, transactionId))
-        return receiptId
+        return dao.saveReceiptAndLink(receiptEntity, itemEntities, transactionId)
     }
 
     private fun fiscalKey(qr: ReceiptQrData): String =
