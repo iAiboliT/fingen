@@ -33,6 +33,7 @@ data class ImportCandidate(
 
 data class NotificationCandidate(
     val sourceKey: String,
+    val source: String = "BANK_NOTIFICATION",
     val sourcePackage: String,
     val title: String?,
     val text: String,
@@ -42,7 +43,7 @@ data class NotificationCandidate(
 )
 
 object IncomingMoneyClassifier {
-    const val LARGE_INCOMING_THRESHOLD_MINOR = 50_000_00L
+    const val LARGE_INCOMING_THRESHOLD_MINOR = 500_000_00L
 
     fun suggestReason(text: String, hasExactDebtMatch: Boolean): IncomingMoneyReason {
         val normalized = text.lowercase()

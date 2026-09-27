@@ -18,53 +18,41 @@ interface FinanceRepository {
     suspend fun categoryId(key: String): Long?
     suspend fun addOperation(draft: OperationDraft)
     suspend fun addImportCandidate(candidate: NotificationCandidate)
-    suspend fun acceptImportCandidate(
-        candidateId: Long,
-        accountId: Long,
-        reason: IncomingMoneyReason?,
-        categoryId: Long?,
-        debtId: Long?
-    )
+    suspend fun acceptImportCandidate(candidateId: Long, accountId: Long, reason: IncomingMoneyReason?, categoryId: Long?, debtId: Long?)
     suspend fun ignoreImportCandidate(candidateId: Long)
 }
 
 @Singleton
 class RoomFinanceRepository @Inject constructor(private val dao: FinanceDao) : FinanceRepository {
     override fun observeAccounts() = dao.observeAccounts().map { rows ->
-        rows.map {
-            Account(it.id, it.name, AccountType.valueOf(it.type), Money(it.balanceMinor, it.currency), it.includeInNetWorth, it.archived)
-        }
+        rows.map { Account(it.id, it.name, AccountType.valueOf(it.type), Money(it.balanceMinor, it.currency), it.includeInNetWorth, it.archived) }
     }
 
     override fun observeDebts() = dao.observeOpenDebts().map { it.map { e -> e.toDomain() } }
 
-    override fun observeCreditCardTemplates() =
-        dao.observeCreditCardTemplates().map { it.map { e -> e.toDomain() } }
+    override fun observeCreditCardTemplates() = dao.observeCreditCardTemplates().map { it.map { e -> e.toDomain() } }
 
-    override fun observeCategories() =
-        dao.observeCategories().map { it.map { e -> Category(e.id, e.key, e.name, e.parentId, e.archived) } }
+    override fun observeCategories() = dao.observeCategories().map { it.map { e -> Category(e.id, e.key, e.name, e.parentId, e.archived) } }
 
-    override fun observeImportCandidates() =
-        dao.observePendingImportCandidates().map { list ->
-            list.map {
-                ImportCandidate(
-                    id = it.id,
-                    source = it.source,
-                    sourcePackage = it.sourcePackage,
-                    title = it.title,
-                    text = it.text,
-                    amount = Money(it.amountMinor, it.currency),
-                    direction = ImportDirection.valueOf(it.direction),
-                    occurredAt = java.time.LocalDateTime.parse(it.occurredAt),
-                    suggestedReason = it.suggestedReason?.let(IncomingMoneyReason::valueOf),
-                    suggestedDebtId = it.suggestedDebtId,
-                    status = ImportCandidateStatus.valueOf(it.status)
-                )
-            }
+    override fun observeImportCandidates() = dao.observePendingImportCandidates().map { list ->
+        list.map {
+            ImportCandidate(
+                id = it.id,
+                source = it.source,
+                sourcePackage = it.sourcePackage,
+                title = it.title,
+                text = it.text,
+                amount = Money(it.amountMinor, it.currency),
+                direction = ImportDirection.valueOf(it.direction),
+                occurredAt = java.time.LocalDateTime.parse(it.occurredAt),
+                suggestedReason = it.suggestedReason?.let(IncomingMoneyReason::valueOf),
+                suggestedDebtId = it.suggestedDebtId,
+                status = ImportCandidateStatus.valueOf(it.status)
+            )
         }
+    }
 
     override fun observePendingImportCount() = dao.observePendingImportCount()
-
     override suspend fun categoryId(key: String): Long? = dao.getCategoryId(key)
 
     override suspend fun addOperation(d: OperationDraft) {
@@ -79,7 +67,6 @@ class RoomFinanceRepository @Inject constructor(private val dao: FinanceDao) : F
             is OperationDraft.CreditCardPurchase -> TransactionEntity(type = TransactionType.CreditDrawdown.name, amountMinor = d.amount.minor, currency = d.amount.currency, date = d.date.toString(), fromAccountId = d.creditCardAccountId, toAccountId = null, categoryId = d.categoryId, note = d.note)
             is OperationDraft.CreditCardPayment -> TransactionEntity(type = TransactionType.CreditPayment.name, amountMinor = d.amount.minor, currency = d.amount.currency, date = d.date.toString(), fromAccountId = d.fromAccountId, toAccountId = d.creditCardAccountId, categoryId = null, note = d.note)
         }
-
         val entries = when (d) {
             is OperationDraft.Income -> listOf(entry(d.accountId, d.amount.minor, d.amount.currency, d.date))
             is OperationDraft.Expense -> listOf(entry(d.accountId, -d.amount.minor, d.amount.currency, d.date))
@@ -91,7 +78,6 @@ class RoomFinanceRepository @Inject constructor(private val dao: FinanceDao) : F
             is OperationDraft.CreditCardPurchase -> listOf(entry(d.creditCardAccountId, -d.amount.minor, d.amount.currency, d.date))
             is OperationDraft.CreditCardPayment -> listOf(entry(d.fromAccountId, -d.amount.minor, d.amount.currency, d.date), entry(d.creditCardAccountId, d.amount.minor, d.amount.currency, d.date))
         }
-
         val newDebt = when (d) {
             is OperationDraft.LendToPerson -> DebtEntity(title = "Долг " + d.personName, counterparty = d.personName, originalMinor = d.amount.minor, remainingMinor = d.amount.minor, currency = d.amount.currency, kind = DebtKind.TheyOweMe.name, openedAt = d.date.toString(), dueDate = null, monthlyPaymentMinor = null, status = DebtStatus.Active.name, note = d.note)
             is OperationDraft.BorrowFromPerson -> DebtEntity(title = "Долг перед " + d.personName, counterparty = d.personName, originalMinor = d.amount.minor, remainingMinor = d.amount.minor, currency = d.amount.currency, kind = DebtKind.IOwePerson.name, openedAt = d.date.toString(), dueDate = null, monthlyPaymentMinor = null, status = DebtStatus.Active.name, note = d.note)
@@ -106,20 +92,13 @@ class RoomFinanceRepository @Inject constructor(private val dao: FinanceDao) : F
     }
 
     override suspend fun addImportCandidate(candidate: NotificationCandidate) {
-        val exactDebts = if (candidate.direction == ImportDirection.Income) {
-            dao.findExactOpenDebts(candidate.amount.minor, candidate.amount.currency)
-        } else {
-            emptyList()
-        }
+        val exactDebts = if (candidate.direction == ImportDirection.Income) dao.findExactOpenDebts(candidate.amount.minor, candidate.amount.currency) else emptyList()
         val suggestedDebtId = exactDebts.singleOrNull()?.id
-        val suggestedReason = if (candidate.direction == ImportDirection.Income) {
-            IncomingMoneyClassifier.suggestReason(candidate.text, suggestedDebtId != null)
-        } else null
-
+        val suggestedReason = if (candidate.direction == ImportDirection.Income) IncomingMoneyClassifier.suggestReason(candidate.text, suggestedDebtId != null) else null
         dao.insertImportCandidate(
             ImportCandidateEntity(
                 sourceKey = candidate.sourceKey,
-                source = "BANK_NOTIFICATION",
+                source = candidate.source,
                 sourcePackage = candidate.sourcePackage,
                 title = candidate.title,
                 text = candidate.text,
@@ -133,84 +112,27 @@ class RoomFinanceRepository @Inject constructor(private val dao: FinanceDao) : F
         )
     }
 
-    override suspend fun acceptImportCandidate(
-        candidateId: Long,
-        accountId: Long,
-        reason: IncomingMoneyReason?,
-        categoryId: Long?,
-        debtId: Long?
-    ) {
-        val candidate = requireNotNull(dao.getImportCandidate(candidateId)) { "Import candidate not found: " + candidateId }
-        require(candidate.status == ImportCandidateStatus.Pending.name) { "Import candidate is already processed" }
-
+    override suspend fun acceptImportCandidate(candidateId: Long, accountId: Long, reason: IncomingMoneyReason?, categoryId: Long?, debtId: Long?) {
+        val candidate = requireNotNull(dao.getImportCandidate(candidateId))
+        require(candidate.status == ImportCandidateStatus.Pending.name)
         val date = LocalDate.parse(candidate.occurredAt.substringBefore('T'))
         val amount = Money(candidate.amountMinor, candidate.currency)
         val draft = when {
             candidate.direction == ImportDirection.Income.name && reason == IncomingMoneyReason.DebtRepayment -> {
-                val selectedDebt = requireNotNull(debtId) { "Для возврата долга нужно выбрать долг" }
-                val debt = requireNotNull(dao.getDebt(selectedDebt)) { "Debt not found: " + selectedDebt }
-                require(debt.kind == DebtKind.TheyOweMe.name) { "Выбран не долг, который должны вам" }
-                require(debt.currency == candidate.currency) { "Валюта долга и поступления различается" }
-                require(candidate.amountMinor <= debt.remainingMinor) { "Сумма возврата больше остатка долга" }
-                OperationDraft.ReceiveDebtBack(
-                    toAccountId = accountId,
-                    debtId = selectedDebt,
-                    amount = amount,
-                    date = date,
-                    note = "Автоимпорт: " + candidate.text
-                )
+                val selectedDebt = requireNotNull(debtId)
+                val debt = requireNotNull(dao.getDebt(selectedDebt))
+                require(debt.kind == DebtKind.TheyOweMe.name)
+                require(debt.currency == candidate.currency)
+                require(candidate.amountMinor <= debt.remainingMinor)
+                OperationDraft.ReceiveDebtBack(accountId, selectedDebt, amount, date, "Автоимпорт: " + candidate.text)
             }
-            candidate.direction == ImportDirection.Income.name -> {
-                OperationDraft.Income(
-                    accountId = accountId,
-                    amount = amount,
-                    date = date,
-                    categoryId = categoryId,
-                    note = "Автоимпорт: " + candidate.text
-                )
-            }
-            else -> {
-                OperationDraft.Expense(
-                    accountId = accountId,
-                    amount = amount,
-                    date = date,
-                    categoryId = categoryId,
-                    note = "Автоимпорт: " + candidate.text
-                )
-            }
+            candidate.direction == ImportDirection.Income.name -> OperationDraft.Income(accountId, amount, date, categoryId, "Автоимпорт: " + candidate.text)
+            else -> OperationDraft.Expense(accountId, amount, date, categoryId, "Автоимпорт: " + candidate.text)
         }
-
         val tx = when (draft) {
-            is OperationDraft.Income -> TransactionEntity(
-                type = TransactionType.Income.name,
-                amountMinor = draft.amount.minor,
-                currency = draft.amount.currency,
-                date = draft.date.toString(),
-                fromAccountId = null,
-                toAccountId = draft.accountId,
-                categoryId = draft.categoryId,
-                note = draft.note
-            )
-            is OperationDraft.Expense -> TransactionEntity(
-                type = TransactionType.Expense.name,
-                amountMinor = draft.amount.minor,
-                currency = draft.amount.currency,
-                date = draft.date.toString(),
-                fromAccountId = draft.accountId,
-                toAccountId = null,
-                categoryId = draft.categoryId,
-                note = draft.note
-            )
-            is OperationDraft.ReceiveDebtBack -> TransactionEntity(
-                type = TransactionType.DebtRepayment.name,
-                amountMinor = draft.amount.minor,
-                currency = draft.amount.currency,
-                date = draft.date.toString(),
-                fromAccountId = null,
-                toAccountId = draft.toAccountId,
-                categoryId = null,
-                note = draft.note
-            )
+            is OperationDraft.Income -> TransactionEntity(type = TransactionType.Income.name, amountMinor = draft.amount.minor, currency = draft.amount.currency, date = draft.date.toString(), fromAccountId = null, toAccountId = draft.accountId, categoryId = draft.categoryId, note = draft.note)
+            is OperationDraft.Expense -> TransactionEntity(type = TransactionType.Expense.name, amountMinor = draft.amount.minor, currency = draft.amount.currency, date = draft.date.toString(), fromAccountId = draft.accountId, toAccountId = null, categoryId = draft.categoryId, note = draft.note)
+            is OperationDraft.ReceiveDebtBack -> TransactionEntity(type = TransactionType.DebtRepayment.name, amountMinor = draft.amount.minor, currency = draft.amount.currency, date = draft.date.toString(), fromAccountId = null, toAccountId = draft.toAccountId, categoryId = null, note = draft.note)
             else -> error("Unsupported import operation")
         }
         val entries = when (draft) {
@@ -220,17 +142,11 @@ class RoomFinanceRepository @Inject constructor(private val dao: FinanceDao) : F
             else -> error("Unsupported import operation")
         }
         val debtIdToReduce = (draft as? OperationDraft.ReceiveDebtBack)?.debtId
-        dao.recordOperation(
-            transaction = tx,
-            entries = entries,
-            debtToReduceId = debtIdToReduce,
-            debtReductionMinor = if (debtIdToReduce != null) amount.minor else 0L,
-            acceptedImportCandidateId = candidateId
-        )
+        dao.recordOperation(tx, entries, debtToReduceId = debtIdToReduce, debtReductionMinor = if (debtIdToReduce != null) amount.minor else 0L, acceptedImportCandidateId = candidateId)
     }
 
     override suspend fun ignoreImportCandidate(candidateId: Long) {
-        val candidate = requireNotNull(dao.getImportCandidate(candidateId)) { "Import candidate not found: " + candidateId }
+        val candidate = requireNotNull(dao.getImportCandidate(candidateId))
         dao.updateImportCandidate(candidate.copy(status = ImportCandidateStatus.Ignored.name))
     }
 
