@@ -1,4 +1,13 @@
-# Production audit — 2026-09-27
+# Production audit — 2026-09-28
+
+## Release candidate 0.3.2
+
+- Receipt persistence was re-audited: linking a receipt to an existing transaction is now a single Room transaction and handles concurrent duplicate fiscal keys.
+- Receipt monetary fallback no longer uses Double; unit-price derivation uses BigDecimal with explicit half-up rounding to minor units.
+- Android version is synchronized to `versionCode = 4`, `versionName = 0.3.2`.
+- Gmail OAuth remains intentionally available in normal Settings.
+
+
 
 ## Исправлено
 
