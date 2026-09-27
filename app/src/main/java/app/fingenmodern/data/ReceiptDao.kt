@@ -31,4 +31,17 @@ interface ReceiptDao {
         }
         return receiptId
     }
+
+    @Transaction
+    suspend fun saveReceiptAndLink(receipt:ReceiptEntity,items:List<ReceiptItemEntity>,transactionId:Long):Long {
+        val insertedId=insertReceipt(receipt)
+        val receiptId=if(insertedId>0L){
+            if(items.isNotEmpty()) insertItems(items.map { it.copy(receiptId=insertedId) })
+            insertedId
+        }else{
+            requireNotNull(findReceipt(receipt.fiscalKey)){"Не удалось получить сохранённый чек"}
+        }
+        linkTransaction(ReceiptTransactionLinkEntity(receiptId,transactionId))
+        return receiptId
+    }
 }
