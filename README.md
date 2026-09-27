@@ -4,7 +4,7 @@
 
 ## Текущий статус
 
-Production foundation / активная разработка. Рабочая основа включает Kotlin, Compose/Material 3, Hilt, Room 3, локальный ledger, счета, операции, долги и версионируемые шаблоны кредитных карт.
+Версия 0.3.2. Production hardening / активная разработка. Рабочая основа включает Kotlin, Compose/Material 3, Hilt, Room 3, локальный ledger, счета, операции, долги и версионируемые шаблоны кредитных карт.
 
 Это еще не финальный Google Play release: впереди импорт старого Fingen, полный CRUD, SMS/OCR, финансовый календарь, backup/restore, paging, security hardening и release signing.
 
