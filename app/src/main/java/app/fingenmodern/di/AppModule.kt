@@ -10,8 +10,8 @@ import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import app.fingenmodern.data.*
 import dagger.Module
 import dagger.Provides
-import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
+import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
@@ -22,7 +22,11 @@ object AppModule {
     fun provideDatabase(@ApplicationContext context: Context): AppDatabase =
         Room.databaseBuilder(context, AppDatabase::class.java, "fingen_next.db")
             .setDriver(BundledSQLiteDriver())
-            .addMigrations(DatabaseMigrations.MIGRATION_1_2, DatabaseMigrations.MIGRATION_2_3)
+            .addMigrations(
+                DatabaseMigrations.MIGRATION_1_2,
+                DatabaseMigrations.MIGRATION_2_3,
+                DatabaseMigrations.MIGRATION_3_4
+            )
             .fallbackToDestructiveMigrationOnDowngrade()
             .build()
 
