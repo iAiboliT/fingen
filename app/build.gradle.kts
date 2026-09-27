@@ -38,7 +38,6 @@ dependencies {
     implementation("androidx.navigation:navigation-compose:2.10.2")
     implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
     implementation("androidx.room3:room3-runtime:3.0.3")
-    implementation("androidx.room3:room3-ktx:3.0.3")
     implementation("androidx.sqlite:sqlite-bundled:2.7.0")
     ksp("androidx.room3:room3-compiler:3.0.3")
     implementation("androidx.datastore:datastore-preferences:1.2.1")
