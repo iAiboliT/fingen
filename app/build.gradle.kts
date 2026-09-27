@@ -26,16 +26,16 @@ android {
 kotlin { jvmToolchain(17) }
 ksp { arg("room.schemaLocation", "$projectDir/schemas") }
 dependencies {
-    val composeBom = platform("androidx.compose:compose-bom:2026.09.00")
+    val composeBom = platform("androidx.compose:compose-bom:2026.06.01")
     implementation(composeBom)
     testImplementation(composeBom)
     androidTestImplementation(composeBom)
-    implementation("androidx.activity:activity-compose:1.13.0")
+    implementation("androidx.activity:activity-compose:1.11.0")
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material:material-icons-extended")
-    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.10.0")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.10.0")
-    implementation("androidx.navigation:navigation-compose:2.10.2")
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.9.4")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.9.4")
+    implementation("androidx.navigation:navigation-compose:2.9.8")
     implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
     implementation("androidx.room3:room3-runtime:3.0.3")
     implementation("androidx.sqlite:sqlite-bundled:2.7.0")
