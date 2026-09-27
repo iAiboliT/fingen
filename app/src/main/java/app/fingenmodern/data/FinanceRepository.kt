@@ -37,15 +37,15 @@ class RoomFinanceRepository @Inject constructor(private val dao: FinanceDao) : F
 
     override suspend fun addOperation(d: OperationDraft) {
         val tx = when (d) {
-            is OperationDraft.Income -> TransactionEntity(TransactionType.Income.name, d.amount.minor, d.amount.currency, d.date.toString(), null, d.accountId, d.categoryId, d.note)
-            is OperationDraft.Expense -> TransactionEntity(TransactionType.Expense.name, d.amount.minor, d.amount.currency, d.date.toString(), d.accountId, null, d.categoryId, d.note)
-            is OperationDraft.Transfer -> TransactionEntity(TransactionType.Transfer.name, d.amount.minor, d.amount.currency, d.date.toString(), d.fromAccountId, d.toAccountId, null, d.note)
-            is OperationDraft.LendToPerson -> TransactionEntity(TransactionType.DebtIssue.name, d.amount.minor, d.amount.currency, d.date.toString(), d.fromAccountId, null, null, d.note ?: ("Долг: " + d.personName))
-            is OperationDraft.BorrowFromPerson -> TransactionEntity(TransactionType.BorrowFromPerson.name, d.amount.minor, d.amount.currency, d.date.toString(), null, d.toAccountId, null, d.note ?: ("Долг перед: " + d.personName))
-            is OperationDraft.ReceiveDebtBack -> TransactionEntity(TransactionType.DebtRepayment.name, d.amount.minor, d.amount.currency, d.date.toString(), null, d.toAccountId, null, d.note ?: ("Возврат долга #" + d.debtId))
-            is OperationDraft.RepayBorrowedMoney -> TransactionEntity(TransactionType.RepayPerson.name, d.amount.minor, d.amount.currency, d.date.toString(), d.fromAccountId, null, null, d.note ?: ("Погашение долга #" + d.debtId))
-            is OperationDraft.CreditCardPurchase -> TransactionEntity(TransactionType.CreditDrawdown.name, d.amount.minor, d.amount.currency, d.date.toString(), d.creditCardAccountId, null, d.categoryId, d.note)
-            is OperationDraft.CreditCardPayment -> TransactionEntity(TransactionType.CreditPayment.name, d.amount.minor, d.amount.currency, d.date.toString(), d.fromAccountId, d.creditCardAccountId, null, d.note)
+            is OperationDraft.Income -> TransactionEntity(type = TransactionType.Income.name, amountMinor = d.amount.minor, currency = d.amount.currency, date = d.date.toString(), fromAccountId = null, toAccountId = d.accountId, categoryId = d.categoryId, note = d.note)
+            is OperationDraft.Expense -> TransactionEntity(type = TransactionType.Expense.name, amountMinor = d.amount.minor, currency = d.amount.currency, date = d.date.toString(), fromAccountId = d.accountId, toAccountId = null, categoryId = d.categoryId, note = d.note)
+            is OperationDraft.Transfer -> TransactionEntity(type = TransactionType.Transfer.name, amountMinor = d.amount.minor, currency = d.amount.currency, date = d.date.toString(), fromAccountId = d.fromAccountId, toAccountId = d.toAccountId, categoryId = null, note = d.note)
+            is OperationDraft.LendToPerson -> TransactionEntity(type = TransactionType.DebtIssue.name, amountMinor = d.amount.minor, currency = d.amount.currency, date = d.date.toString(), fromAccountId = d.fromAccountId, toAccountId = null, categoryId = null, note = d.note ?: ("Долг: " + d.personName))
+            is OperationDraft.BorrowFromPerson -> TransactionEntity(type = TransactionType.BorrowFromPerson.name, amountMinor = d.amount.minor, currency = d.amount.currency, date = d.date.toString(), fromAccountId = null, toAccountId = d.toAccountId, categoryId = null, note = d.note ?: ("Долг перед: " + d.personName))
+            is OperationDraft.ReceiveDebtBack -> TransactionEntity(type = TransactionType.DebtRepayment.name, amountMinor = d.amount.minor, currency = d.amount.currency, date = d.date.toString(), fromAccountId = null, toAccountId = d.toAccountId, categoryId = null, note = d.note ?: ("Возврат долга #" + d.debtId))
+            is OperationDraft.RepayBorrowedMoney -> TransactionEntity(type = TransactionType.RepayPerson.name, amountMinor = d.amount.minor, currency = d.amount.currency, date = d.date.toString(), fromAccountId = d.fromAccountId, toAccountId = null, categoryId = null, note = d.note ?: ("Погашение долга #" + d.debtId))
+            is OperationDraft.CreditCardPurchase -> TransactionEntity(type = TransactionType.CreditDrawdown.name, amountMinor = d.amount.minor, currency = d.amount.currency, date = d.date.toString(), fromAccountId = d.creditCardAccountId, toAccountId = null, categoryId = d.categoryId, note = d.note)
+            is OperationDraft.CreditCardPayment -> TransactionEntity(type = TransactionType.CreditPayment.name, amountMinor = d.amount.minor, currency = d.amount.currency, date = d.date.toString(), fromAccountId = d.fromAccountId, toAccountId = d.creditCardAccountId, categoryId = null, note = d.note)
         }
 
         val entries = when (d) {
