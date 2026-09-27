@@ -1,11 +1,10 @@
 package app.fingenmodern.data
 
 import android.util.Log
-import app.fingenmodern.domain.Money
-import app.fingenmodern.domain.Receipt
-import app.fingenmodern.domain.ReceiptItem
-import app.fingenmodern.domain.ReceiptQrData
-import app.fingenmodern.domain.ReceiptCategorizer
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.stringPreferencesKey
+import app.fingenmodern.domain.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
@@ -33,8 +32,7 @@ class ProverkaChekaReceiptProvider @Inject constructor(
                 "Не настроен API-токен сервиса получения состава чека"
             }
 
-            val connection = URL("https://proverkacheka.com/api/v1/check/get")
-                .openConnection() as HttpURLConnection
+            val connection = URL("https://proverkacheka.com/api/v1/check/get").openConnection() as HttpURLConnection
             connection.requestMethod = "POST"
             connection.connectTimeout = 10_000
             connection.readTimeout = 15_000
@@ -62,7 +60,6 @@ class ProverkaChekaReceiptProvider @Inject constructor(
             connection.disconnect()
 
             require(response.isNotBlank()) { "Сервис не вернул данные чека (HTTP $responseCode)" }
-
             val root = JSONObject(response)
             require(root.optInt("code") == 1) {
                 root.optString("message").ifBlank { "Не удалось получить состав чека" }
@@ -93,7 +90,8 @@ class ProverkaChekaReceiptProvider @Inject constructor(
             }
 
             Receipt(
-                merchantName = json.optString("userInn").takeIf { it.isNotBlank() },
+                merchantName = json.optString("retailPlace").takeIf { it.isNotBlank() }
+                    ?: json.optString("user").takeIf { it.isNotBlank() },
                 merchantInn = json.optString("userInn").takeIf { it.isNotBlank() },
                 dateTime = json.optString("dateTime").takeIf { it.isNotBlank() }?.let {
                     runCatching { java.time.LocalDateTime.parse(it) }.getOrNull()
@@ -108,9 +106,9 @@ class ProverkaChekaReceiptProvider @Inject constructor(
 
 @Singleton
 class ReceiptSettingsStore @Inject constructor(
-    private val dataStore: androidx.datastore.preferences.core.PreferenceDataStore
+    private val dataStore: DataStore<Preferences>
 ) {
-    private val tokenKey = androidx.datastore.preferences.core.stringPreferencesKey("receipt_api_token")
+    private val tokenKey = stringPreferencesKey("receipt_api_token")
 
     suspend fun apiToken(): String? = dataStore.data.first()[tokenKey]
 
@@ -122,4 +120,4 @@ class ReceiptSettingsStore @Inject constructor(
 }
 
 private fun Money.formatPlain(): String =
-    java.math.BigDecimal(minor).movePointLeft(2).toPlainString()
+    BigDecimal(minor).movePointLeft(2).toPlainString()
