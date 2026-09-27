@@ -38,7 +38,7 @@ interface FinanceDao {
     ):Long {
         val id=insertTransaction(transaction)
         insertLedgerEntries(entries.map{it.copy(transactionId=id)})
-        newDebt?.let(::insertDebt)
+        newDebt?.let { insertDebt(it) }
         debtToReduceId?.let{ debtId ->
             val debt=requireNotNull(getDebt(debtId)){"Debt not found: $debtId"}
             val remaining=debt.remainingMinor-debtReductionMinor
