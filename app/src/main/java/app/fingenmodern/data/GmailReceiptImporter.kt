@@ -1,5 +1,6 @@
 package app.fingenmodern.data
 
+import android.util.Base64
 import app.fingenmodern.domain.GmailReceiptParser
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -7,7 +8,6 @@ import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
 import java.net.URLEncoder
-import android.util.Base64
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -49,11 +49,11 @@ class GmailReceiptImporter @Inject constructor(
 
     private fun listMessageIds(token: String): List<String> {
         val query = URLEncoder.encode(
-            "newer_than:90d {чек receipt "кассовый чек" "электронный чек"}",
+            """newer_than:90d {чек receipt "кассовый чек" "электронный чек"}""",
             Charsets.UTF_8.name()
         )
         val json = request(
-            "https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=50&q=$query",
+            "https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=50&q=" + query,
             token
         ) ?: return emptyList()
         val array = json.optJSONArray("messages") ?: return emptyList()
@@ -71,7 +71,7 @@ class GmailReceiptImporter @Inject constructor(
     private fun request(url: String, token: String): JSONObject? {
         val connection = (URL(url).openConnection() as HttpURLConnection).apply {
             requestMethod = "GET"
-            setRequestProperty("Authorization", "Bearer $token")
+            setRequestProperty("Authorization", "Bearer " + token)
             connectTimeout = 15_000
             readTimeout = 30_000
         }
@@ -87,7 +87,7 @@ class GmailReceiptImporter @Inject constructor(
         val direct = part.optJSONObject("body")?.optString("data").orEmpty()
         val mime = part.optString("mimeType")
         val directText = decodeBase64Url(direct)
-        if (directText.isNotBlank() && (mime.startsWith("text/") || mime == "text/html")) {
+        if (directText.isNotBlank() && mime.startsWith("text/")) {
             return if (mime == "text/html") stripHtml(directText) else directText
         }
         val parts = part.optJSONArray("parts") ?: return directText
@@ -110,11 +110,11 @@ class GmailReceiptImporter @Inject constructor(
     }
 
     private fun stripHtml(value: String): String =
-        value.replace(Regex("(?is)<br\\s*/?>"), "\n")
-            .replace(Regex("(?is)</p>"), "\n")
-            .replace(Regex("(?is)<[^>]+>"), " ")
+        value.replace(Regex("""(?is)<br\s*/?>"""), "\n")
+            .replace(Regex("""(?is)</p>"""), "\n")
+            .replace(Regex("""(?is)<[^>]+>"""), " ")
             .replace("&nbsp;", " ")
             .replace("&amp;", "&")
-            .replace(Regex("\\s+"), " ")
+            .replace(Regex("""\s+"""), " ")
             .trim()
 }

@@ -63,8 +63,9 @@ object GmailReceiptParser {
     private fun extractMerchant(sender: String?, subject: String?): String? {
         val fromName = sender?.substringBefore('<')?.trim()?.trim('"').orEmpty()
         if (fromName.isNotBlank() && !fromName.contains('@')) return fromName
-        return subject?.replace(Regex("(?i)(электронный\s+)?кассовый\s+чек"), "")
-            ?.replace(Regex("(?i)чек"), "")
+        return subject
+            ?.replace(Regex("""(?i)(электронный\s+)?кассовый\s+чек"""), "")
+            ?.replace(Regex("""(?i)чек"""), "")
             ?.trim(' ', '-', '—', ':')
             ?.takeIf { it.isNotBlank() }
     }
